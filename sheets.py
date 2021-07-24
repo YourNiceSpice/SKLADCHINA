@@ -1,5 +1,6 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import re
 
 class SheetsHandler():
     scope = ["https://spreadsheets.google.com/feeds",'https://www.googleapis.com/auth/spreadsheets',"https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive"]
@@ -12,28 +13,21 @@ class SheetsHandler():
 
 
     def query_find(self, query):
-        output = ''
-        try:
-            q = self.sheet.findall(query)
-            for i in q:
-                data = self.sheet.row_values(i.row)
-                col = ['Cотрудник','Дата','Всего звонков','Продажи','назначено встреч','Бензин','Замечания']
-                j = 0
-                for i in data:
-                    col_name = '<b>' + col[j]  + ': ' + '</b>'
-                    j+=1
-                    output += col_name + i + '\n'
-                output += '\n' + '******************************************' + '\n'
-            return output
-        except:
-            return 'Такого результата нет!'
+        result = []
+        values = self.sheet.get_all_values()
+        for i in values:
+            find = re.findall(r"\b{}\b".format(query), i[0])
+            if find:
+                result.append(i[0])
+        if result:
+            return result
+        else:
+            return 'По этому запросу ничего нет'
 
-    def query_add(self, query):
-        query = query.split(',')
-        for i in range(2, 6):
-            query[i] = int(query[i])
 
-        self.sheet.append_row(query)
+    def query_add(self, queries):
+
+        self.sheet.append_rows([queries])
 
     def query_update(self, query):
         query = query.split(',')
